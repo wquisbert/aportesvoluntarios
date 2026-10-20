@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Registro y Envío de Aportes Voluntarios (Septiembre)</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          emerald: {
+            50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',
+            400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',
+            800:'#065f46',900:'#064e3b'
+          }
+        },
+        fontFamily: { sans: ['Poppins','ui-sans-serif','system-ui'] }
+      }
+    }
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  body { font-family:'Poppins',sans-serif; -webkit-tap-highlight-color: transparent; }
+  table.dataTable tbody td { vertical-align: middle !important; font-size:0.85rem; }
+  table.dataTable thead th {
+    background:#ecfdf5; color:#064e3b; font-weight:700;
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:.4px;
+  }
+  .dataTables_wrapper .dataTables_filter input,
+  .dataTables_wrapper .dataTables_length select {
+    border:2px solid #d1fae5; border-radius:10px; padding:6px 10px;
+    outline:none; font-size:0.85rem; background:#ecfdf5;
+  }
+  .dataTables_wrapper .dataTables_filter input:focus { border-color:#10b981; background:#fff; }
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background:#059669 !important; color:white !important; border-radius:8px; border:none;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button { border-radius:8px; }
+
+  .swal2-popup { border-radius:20px !important; font-family:'Poppins',sans-serif !important; }
+  .swal2-confirm {
+    background:linear-gradient(135deg,#10b981,#047857) !important;
+    border-radius:10px !important; font-weight:600 !important;
+  }
+  .swal2-cancel {
+    background:#e5e7eb !important; color:#374151 !important;
+    border-radius:10px !important; font-weight:600 !important;
+  }
+
+  .thumb-img {
+    width:52px; height:52px; object-fit:cover; border-radius:8px;
+    border:2px solid #d1fae5; cursor:pointer; transition:transform .2s;
+    display:block; margin:0 auto; background:#f3f4f6;
+  }
+  .thumb-img:hover { transform:scale(1.1); border-color:#10b981; }
+
+  @media (max-width: 640px) {
+    input[type="file"] { font-size:16px; }
+    #uploadArea { touch-action: manipulation; }
+  }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .animate-fadeIn { animation: fadeIn .45s ease; }
+
+  .detalle-img {
+    max-width: 100%;
+    max-height: 380px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(5,150,105,0.25);
+    display: block;
+    margin: 0 auto;
+  }
+  .detalle-item { padding: 6px 0; border-bottom: 1px dashed #d1fae5; font-size: 0.9rem; }
+  .detalle-item:last-child { border-bottom: none; }
+  .detalle-label { color: #047857; font-weight: 600; display: inline-block; min-width: 120px; }
+
+  /* Botón "ojo" en password */
+  .toggle-pass {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #059669;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .toggle-pass:hover { background: #d1fae5; }
+
+  /* Botón actualizar inline */
+  .btn-actualizar-tabla {
+    background:#10b981;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:6px 12px;
+    font-size:0.78rem;
+    font-weight:600;
+    cursor:pointer;
+    transition: all .2s;
+    box-shadow:0 4px 10px rgba(16,185,129,.3);
+  }
+  .btn-actualizar-tabla:hover { background:#047857; transform:translateY(-1px); }
+  .btn-actualizar-tabla:disabled { opacity:.7; cursor:not-allowed; transform:none; }
+  .btn-actualizar-tabla.refrescando { animation:pulseBtn 1s infinite; }
+  @keyframes pulseBtn {
+    0%,100%{ box-shadow:0 4px 10px rgba(16,185,129,.3); }
+    50%{ box-shadow:0 4px 20px rgba(16,185,129,.7); }
+  }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200">
+
+<div class="container mx-auto max-w-5xl p-3 sm:p-6 relative">
+
+  <!-- ============ VISTA PÚBLICA ============ -->
+  <div id="vistaPublica">
+    <div class="bg-white rounded-2xl shadow-2xl shadow-emerald-700/20 overflow-hidden animate-fadeIn max-w-2xl mx-auto">
+      <div class="relative bg-gradient-to-br from-emerald-600 to-emerald-800 text-white text-center px-4 pt-7 pb-8">
+        <button id="btnAbrirAdmin"
+          class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/20 hover:bg-white/35 border-2 border-white/40 flex items-center justify-center text-lg transition"
+          title="Panel Administrador">🔒</button>
+        <h1 class="text-base sm:text-lg md:text-2xl font-bold leading-tight px-2">
+          REGISTRO Y ENVÍO DE APORTES VOLUNTARIOS
+        </h1>
+        <p class="text-xs sm:text-sm opacity-95 mt-1">(SEPTIEMBRE)</p>
+      </div>
+
+      <form id="registroForm" novalidate class="p-4 sm:p-8 space-y-3">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-emerald-900 mb-1">🆔 CI</label>
+            <input type="number" name="ci" required placeholder="12345678" inputmode="numeric"
+              class="w-full px-3 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 text-base focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-emerald-900 mb-1">🔢 Nro Item</label>
+            <input type="number" name="nroItem" required placeholder="10" inputmode="numeric"
+              class="w-full px-3 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 text-base focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 outline-none transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-emerald-900 mb-1">👤 Nombre Completo</label>
+          <input type="text" name="nombre" required placeholder="Juan Pérez"
+            class="w-full px-3 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 text-base uppercase focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 outline-none transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-emerald-900 mb-1">🏢 Sindicato</label>
+          <select name="sindicato" id="selectSindicato" required
+            class="w-full px-3 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 text-base uppercase focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 outline-none transition">
+            <option value="" selected disabled>Seleccione...</option>
+            <option value="SEDES LA PAZ">SEDES LA PAZ</option>
+            <option value="VECTORES">VECTORES</option>
+            <option value="OTRO">OTRO</option>
+          </select>
+
+          <div id="otroSindicatoWrap" class="hidden mt-2">
+            <input type="text" name="otroSindicato" id="otroSindicato"
+              placeholder="Escriba el nombre del sindicato"
+              class="w-full px-3 py-3 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-base uppercase focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-500/20 outline-none transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-emerald-900 mb-1">💵 Monto (Bs.)</label>
+          <input type="number" name="monto" required step="0.01" min="0" placeholder="100.00" inputmode="decimal"
+            class="w-full px-3 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 text-base focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 outline-none transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-emerald-900 mb-1">📷 Boucher / Fotografía</label>
+          <label for="boucherInput" id="uploadArea"
+            class="relative block border-2 border-dashed border-emerald-400 rounded-2xl p-4 min-h-[150px] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 cursor-pointer transition flex flex-col items-center justify-center text-center">
+            <input type="file" id="boucherInput" accept="image/*" capture="environment"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div id="uploadContent" class="pointer-events-none flex flex-col items-center justify-center w-full">
+              <div class="text-3xl mb-1">☁️</div>
+              <div class="text-emerald-700 font-medium text-sm">Toca o arrastra tu imagen aquí</div>
+              <div class="text-emerald-600 text-xs opacity-80">JPG, PNG · Máx 5 MB</div>
+            </div>
+          </label>
+        </div>
+
+        <button type="submit" id="btnSubmit"
+          class="w-full py-3.5 rounded-xl text-white font-semibold bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-700/30 hover:-translate-y-0.5 hover:shadow-xl transition disabled:opacity-70 disabled:cursor-not-allowed">
+          ✅ Registrar Datos
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ VISTA ADMIN ============ -->
+  <div id="vistaAdmin" class="hidden">
+    <div class="bg-white rounded-2xl shadow-2xl shadow-emerald-700/20 overflow-hidden animate-fadeIn">
+      <div class="bg-gradient-to-br from-emerald-700 to-emerald-900 text-white px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+        <h2 class="font-bold text-base sm:text-lg text-center sm:text-left">🛡️ Panel Administrador</h2>
+        <div class="flex gap-2 justify-center">
+          <button id="btnExportar"
+            class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/30 border-2 border-white/40 text-xs font-semibold transition">
+            📊 Exportar Excel
+          </button>
+          <button id="btnCerrarAdmin"
+            class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/30 border-2 border-white/40 text-xs font-semibold transition">
+            Salir
+          </button>
+        </div>
+      </div>
+
+      <div class="p-3 sm:p-6">
+        <!-- Barra superior con Actualizar inline -->
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+          <small id="contadorRegistros" class="text-emerald-700 font-semibold text-sm">0 registros</small>
+          <button id="btnRefrescar" class="btn-actualizar-tabla">🔄 Actualizar Tabla</button>
+        </div>
+
+        <div class="overflow-x-auto -mx-3 sm:mx-0">
+          <table id="tablaRegistros" class="display responsive nowrap w-full text-sm" style="width:100%">
+            <thead>
+              <tr>
+                <th>CI</th>
+                <th>Item</th>
+                <th>Nombre</th>
+                <th>Sindicato</th>
+                <th>Monto</th>
+                <th>Imagen</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzWfvX7-TcQVQ3LbeJoxnukdH7_qhU7irJJdDaZx7NSl7eHyEijRFPcYVxwhNbm3lqF/exec';
+const API_TOKEN = 'Sindicatosedeslapaz@2026';
+
+// ==================== UTILIDADES ====================
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+
+function convertToDirectImageUrl(url) {
+  if (!url) return '';
+  try {
+    const m = String(url).match(/\/d\/([^/]+)/);
+    if (m && m[1]) return 'https://lh3.googleusercontent.com/d/' + m[1];
+  } catch(e) {}
+  return url;
+}
+
+async function apiCall(payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ==================== COMPROBANTE PDF (reutilizable) ====================
+async function generarComprobantePDF(r, imgUrl, opciones = {}) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+
+  // Encabezado
+  doc.setFillColor(5, 150, 105);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(15);
+  doc.setFont('helvetica', 'bold');
+  doc.text('APORTES VOLUNTARIOS - SEPTIEMBRE', 105, 13, { align:'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(opciones.titulo || 'Comprobante de Registro', 105, 21, { align:'center' });
+
+  // Datos
+  doc.setTextColor(6, 78, 59);
+  doc.setFontSize(11);
+  let y = 45;
+  const lineH = 9;
+  const fields = [
+    ['CI:', r.ci],
+    ['Nro Item:', r.nroItem],
+    ['Nombre:', r.nombre],
+    ['Sindicato:', r.sindicato],
+    ['Monto:', (r.monto || '0') + ' Bs.'],
+    ['Fecha:', r.fecha ? new Date(r.fecha).toLocaleString('es-BO') : new Date().toLocaleString('es-BO')]
+  ];
+  fields.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(value), 55, y);
+    y += lineH;
+  });
+
+  // Imagen
+  if (imgUrl) {
+    try {
+      const resp = await fetch(imgUrl, { mode:'cors' });
+      const blob = await resp.blob();
+      const dataUrl = await blobToBase64(blob);
+      const props = doc.getImageProperties(dataUrl);
+      const maxW = 140, maxH = 130;
+      const ratio = Math.min(maxW / props.width, maxH / props.height);
+      const w = props.width * ratio;
+      const h = props.height * ratio;
+      const x = (210 - w) / 2;
+      doc.addImage(dataUrl, 'PNG', x, y + 5, w, h);
+      y += h + 15;
+    } catch (e) {
+      doc.setTextColor(150, 0, 0);
+      doc.text('[Imagen no disponible para insertar en PDF]', 105, y + 10, { align:'center' });
+    }
+  }
+
+  // Pie
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Documento generado el ' + new Date().toLocaleString('es-BO'), 105, 285, { align:'center' });
+
+  const nombreArchivo = opciones.nombreArchivo || `Comprobante_${r.ci}_${Date.now()}.pdf`;
+  doc.save(nombreArchivo);
+}
+
+// ==================== VISTA PÚBLICA ====================
+const form = document.getElementById('registroForm');
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('boucherInput');
+const uploadContent = document.getElementById('uploadContent');
+const btnSubmit = document.getElementById('btnSubmit');
+
+const selectSindicato = document.getElementById('selectSindicato');
+const otroSindicatoWrap = document.getElementById('otroSindicatoWrap');
+const otroSindicatoInput = document.getElementById('otroSindicato');
+
+let currentFile = null;
+
+selectSindicato.addEventListener('change', () => {
+  if (selectSindicato.value === 'OTRO') {
+    otroSindicatoWrap.classList.remove('hidden');
+    otroSindicatoInput.required = true;
+    otroSindicatoInput.focus();
+  } else {
+    otroSindicatoWrap.classList.add('hidden');
+    otroSindicatoInput.required = false;
+    otroSindicatoInput.value = '';
+  }
+});
+
+['dragenter','dragover'].forEach(evt =>
+  uploadArea.addEventListener(evt, e => {
+    e.preventDefault();
+    uploadArea.classList.add('bg-emerald-200');
+  })
+);
+['dragleave','drop'].forEach(evt =>
+  uploadArea.addEventListener(evt, e => {
+    e.preventDefault();
+    uploadArea.classList.remove('bg-emerald-200');
+  })
+);
+uploadArea.addEventListener('drop', e => {
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) {
+    Swal.fire({ icon:'error', title:'Archivo inválido', text:'Selecciona una imagen válida (JPG, PNG).' });
+    resetUpload(); return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    Swal.fire({ icon:'warning', title:'Imagen muy grande', text:'La imagen supera los 5 MB.' });
+    resetUpload(); return;
+  }
+
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    uploadContent.innerHTML = `
+      <img src="${ev.target.result}" class="max-w-full max-h-[220px] rounded-xl shadow-lg shadow-emerald-700/25" alt="Vista previa">
+      <div class="text-emerald-600 text-xs mt-2">${escapeHtml(file.name)} · ${(file.size/1024).toFixed(1)} KB</div>
+    `;
+    if (!document.getElementById('btnRemoveImg')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'btnRemoveImg';
+      btn.textContent = '✕';
+      btn.className = 'absolute top-2 right-2 w-9 h-9 rounded-full bg-red-500 hover:bg-red-600 text-white text-lg shadow-lg transition z-20';
+      btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); resetUpload(); });
+      uploadArea.appendChild(btn);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUpload() {
+  currentFile = null;
+  fileInput.value = '';
+  const btn = document.getElementById('btnRemoveImg');
+  if (btn) btn.remove();
+  uploadContent.innerHTML = `
+    <div class="text-3xl mb-1">☁️</div>
+    <div class="text-emerald-700 font-medium text-sm">Toca o arrastra tu imagen aquí</div>
+    <div class="text-emerald-600 text-xs opacity-80">JPG, PNG · Máx 5 MB</div>
+  `;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (selectSindicato.value === 'OTRO' && !otroSindicatoInput.value.trim()) {
+    Swal.fire({ icon:'warning', title:'Falta el sindicato', text:'Escriba el nombre del sindicato.' });
+    otroSindicatoInput.focus();
+    return;
+  }
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+  if (!currentFile) {
+    Swal.fire({ icon:'warning', title:'Falta la imagen', text:'Debes adjuntar tu boucher antes de registrar.' });
+    return;
+  }
+
+  const imageDataUrl = await fileToDataURL(currentFile);
+  const nombreUp = form.nombre.value.trim().toUpperCase();
+  const sindicatoFinal = selectSindicato.value === 'OTRO'
+    ? otroSindicatoInput.value.trim().toUpperCase()
+    : selectSindicato.value.toUpperCase();
+
+  const confirm = await Swal.fire({
+    title: '¿Confirmar datos?',
+    html: `
+      <div class="text-left space-y-1.5 text-sm">
+        <div class="pb-1 border-b border-dashed border-emerald-100"><span class="text-emerald-700 font-semibold inline-block min-w-[105px]">CI:</span>${escapeHtml(form.ci.value)}</div>
+        <div class="pb-1 border-b border-dashed border-emerald-100"><span class="text-emerald-700 font-semibold inline-block min-w-[105px]">Nro Item:</span>${escapeHtml(form.nroItem.value)}</div>
+        <div class="pb-1 border-b border-dashed border-emerald-100"><span class="text-emerald-700 font-semibold inline-block min-w-[105px]">Nombre:</span>${escapeHtml(nombreUp)}</div>
+        <div class="pb-1 border-b border-dashed border-emerald-100"><span class="text-emerald-700 font-semibold inline-block min-w-[105px]">Sindicato:</span>${escapeHtml(sindicatoFinal)}</div>
+        <div class="pb-1 border-b border-dashed border-emerald-100"><span class="text-emerald-700 font-semibold inline-block min-w-[105px]">Monto:</span>${escapeHtml(form.monto.value)} Bs.</div>
+        <img src="${imageDataUrl}" class="max-w-[160px] max-h-[160px] rounded-xl shadow-lg shadow-emerald-700/30 mx-auto mt-3 block">
+      </div>
+      <p class="text-xs text-gray-500 text-center mt-3">Verifica que los datos y la imagen sean correctos.</p>
+    `,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: '✅ Sí, registrar',
+    cancelButtonText: '✏️ Revisar',
+    reverseButtons: true,
+    width: 460
+  });
+  if (!confirm.isConfirmed) return;
+
+  btnSubmit.disabled = true;
+  btnSubmit.textContent = '⏳ Procesando...';
+  Swal.fire({ title:'Guardando registro...', html:'Por favor espera.', allowOutsideClick:false, allowEscapeKey:false, didOpen:()=>Swal.showLoading() });
+
+  try {
+    const base64 = imageDataUrl.split(',')[1];
+    const result = await apiCall({
+      action: 'registrar',
+      token: API_TOKEN,
+      ci: form.ci.value,
+      nroItem: form.nroItem.value,
+      nombre: nombreUp,
+      sindicato: sindicatoFinal,
+      monto: form.monto.value,
+      fileBase64: base64,
+      fileName: currentFile.name,
+      fileType: currentFile.type
+    });
+
+    if (!result.success) throw new Error(result.message);
+
+    // Objeto de registro para el comprobante PDF
+    const registroParaPDF = {
+      ci: form.ci.value,
+      nroItem: form.nroItem.value,
+      nombre: nombreUp,
+      sindicato: sindicatoFinal,
+      monto: form.monto.value,
+      fecha: new Date().toISOString(),
+      boucher: result.url || ''
+    };
+
+    // Éxito con opción de descargar comprobante
+    const respuesta = await Swal.fire({
+      icon: 'success',
+      title: '¡Registro exitoso!',
+      html: `
+        <p>Tus datos fueron guardados correctamente.</p>
+        <p class="text-xs text-gray-500 mt-1">Puedes descargar tu comprobante de envío como respaldo.</p>
+        ${result.url ? `<a href="${result.url}" target="_blank" class="text-emerald-600 font-semibold text-xs">Ver boucher subido</a>` : ''}
+      `,
+      showCancelButton: true,
+      confirmButtonText: '📥 Descargar comprobante PDF',
+      cancelButtonText: 'Cerrar',
+      reverseButtons: true,
+      cancelButtonColor: '#6b7280'
+    });
+
+    if (respuesta.isConfirmed) {
+      try {
+        Swal.fire({ title:'Generando comprobante...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+        await generarComprobantePDF(
+          registroParaPDF,
+          result.url ? convertToDirectImageUrl(result.url) : '',
+          {
+            titulo: 'Comprobante de Envío - Usuario',
+            nombreArchivo: `Comprobante_Aporte_${form.ci.value}_${Date.now()}.pdf`
+          }
+        );
+        Swal.fire({ icon:'success', title:'Comprobante descargado', timer:1500, showConfirmButton:false });
+      } catch (e) {
+        Swal.fire({ icon:'warning', title:'Aviso', text:'No se pudo generar el PDF, pero tu registro quedó guardado.' });
+      }
+    }
+
+    form.reset();
+    resetUpload();
+    otroSindicatoWrap.classList.add('hidden');
+    otroSindicatoInput.value = '';
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error al registrar', html:`<p>${escapeHtml(err.message)}</p><p class="text-xs text-gray-500">Verifica tu conexión.</p>` });
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = '✅ Registrar Datos';
+  }
+});
+
+// ==================== ADMIN ====================
+const vistaPublica = document.getElementById('vistaPublica');
+const vistaAdmin = document.getElementById('vistaAdmin');
+const btnAbrirAdmin = document.getElementById('btnAbrirAdmin');
+const btnCerrarAdmin = document.getElementById('btnCerrarAdmin');
+const btnExportar = document.getElementById('btnExportar');
+const btnRefrescar = document.getElementById('btnRefrescar');
+const contadorRegistros = document.getElementById('contadorRegistros');
+
+let sessionToken = null;
+let dt = null;
+let todosRegistros = [];
+
+// ==================== LOGIN CON OJO EN PASSWORD ====================
+btnAbrirAdmin.addEventListener('click', async () => {
+  const { value: fv } = await Swal.fire({
+    title: '🔒 Acceso Administrador',
+    html: `
+      <div class="text-left space-y-3">
+        <input id="swal-u" class="swal2-input" placeholder="Usuario" autocomplete="username">
+        <div style="position:relative;">
+          <input id="swal-p" type="password" class="swal2-input w-full" placeholder="Contraseña" autocomplete="current-password" style="padding-right: 44px;">
+          <button type="button" id="togglePass" class="toggle-pass" aria-label="Mostrar u ocultar contraseña">👁️</button>
+        </div>
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Ingresar',
+    cancelButtonText: 'Cancelar',
+    didOpen: () => {
+      const pInput = document.getElementById('swal-p');
+      const btnEye = document.getElementById('togglePass');
+      btnEye.addEventListener('click', () => {
+        if (pInput.type === 'password') {
+          pInput.type = 'text';
+          btnEye.textContent = '🙈';
+        } else {
+          pInput.type = 'password';
+          btnEye.textContent = '👁️';
+        }
+        pInput.focus();
+      });
+    },
+    preConfirm: () => {
+      const usuario = document.getElementById('swal-u').value.trim();
+      const password = document.getElementById('swal-p').value;
+      if (!usuario || !password) { Swal.showValidationMessage('Ingresa usuario y contraseña'); return false; }
+      return { usuario, password };
+    }
+  });
+  if (!fv) return;
+
+  Swal.fire({ title:'Verificando...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+  try {
+    const res = await apiCall({ action:'login', usuario: fv.usuario, password: fv.password });
+    if (!res.success) throw new Error(res.message);
+    sessionToken = res.sessionToken;
+    vistaPublica.classList.add('hidden');
+    vistaAdmin.classList.remove('hidden');
+    await cargarRegistros();
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Acceso denegado', text: err.message });
+  }
+});
+
+btnCerrarAdmin.addEventListener('click', () => {
+  sessionToken = null;
+  todosRegistros = [];
+  if (dt) { dt.destroy(); dt = null; }
+  vistaAdmin.classList.add('hidden');
+  vistaPublica.classList.remove('hidden');
+});
+
+// ==================== REFRESCAR SIN SALIR DE ADMIN ====================
+btnRefrescar.addEventListener('click', async () => {
+  btnRefrescar.disabled = true;
+  btnRefrescar.classList.add('refrescando');
+  btnRefrescar.textContent = '⏳ Actualizando...';
+
+  try {
+    const res = await apiCall({ action:'listar', sessionToken, forceRefresh: true });
+    if (!res.success) throw new Error(res.message);
+    todosRegistros = res.registros || [];
+    actualizarDataTableSinPerderEstado();
+    Swal.fire({ icon:'success', title:'Tabla actualizada', toast:true, position:'top-end', timer:1500, showConfirmButton:false });
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error', text: err.message });
+  } finally {
+    btnRefrescar.disabled = false;
+    btnRefrescar.classList.remove('refrescando');
+    btnRefrescar.textContent = '🔄 Actualizar Tabla';
+  }
+});
+
+async function cargarRegistros() {
+  Swal.fire({ title:'Cargando registros...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+  try {
+    const res = await apiCall({ action:'listar', sessionToken });
+    if (!res.success) throw new Error(res.message);
+    todosRegistros = res.registros || [];
+    construirDataTable();
+    Swal.close();
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error', text: err.message });
+  }
+}
+
+function filaHTML(r) {
+  const tieneBoucher = r.boucher && r.boucher !== 'SIN IMAGEN' && String(r.boucher).includes('http');
+  const thumb = tieneBoucher
+    ? `<img src="${convertToDirectImageUrl(r.boucher)}"
+            class="thumb-img"
+            alt="Boucher"
+            loading="lazy"
+            onerror="this.onerror=null;this.src='https://placehold.co/52x52/ecfdf5/059669?text=IMG';"
+            onclick='verDetalle(${r.rowIndex})'>`
+    : `<span class="text-xs text-gray-400 italic">Sin imagen</span>`;
+
+  return `
+    <tr data-row="${r.rowIndex}">
+      <td>${escapeHtml(r.ci)}</td>
+      <td>${escapeHtml(r.nroItem)}</td>
+      <td>${escapeHtml(r.nombre)}</td>
+      <td>${escapeHtml(r.sindicato)}</td>
+      <td class="font-semibold text-emerald-700">${escapeHtml(r.monto || '')}${r.monto ? ' Bs.' : ''}</td>
+      <td>${thumb}</td>
+      <td>
+        <div class="flex gap-1 justify-center">
+          <button class="btn-ver px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-semibold hover:bg-emerald-200 transition" data-row="${r.rowIndex}" title="Ver detalle">👁️</button>
+          <button class="btn-editar px-2 py-1 rounded-md bg-yellow-100 text-yellow-700 text-xs font-semibold hover:bg-yellow-200 transition" data-row="${r.rowIndex}" title="Editar">✏️</button>
+          <button class="btn-eliminar px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold hover:bg-red-200 transition" data-row="${r.rowIndex}" data-nombre="${escapeHtml(r.nombre)}" title="Eliminar">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function actualizarContador() {
+  const n = todosRegistros.length;
+  contadorRegistros.textContent = `${n} registro${n === 1 ? '' : 's'}`;
+}
+
+function construirDataTable() {
+  if (dt) { dt.destroy(); dt = null; }
+  const tbody = document.querySelector('#tablaRegistros tbody');
+  tbody.innerHTML = todosRegistros.map(filaHTML).join('');
+
+  dt = $('#tablaRegistros').DataTable({
+    responsive: true,
+    pageLength: 10,
+    lengthMenu: [5,10,25,50,100],
+    order: [[0,'asc']],
+    columnDefs: [{ targets: [5,6], orderable: false, searchable: false }],
+    language: {
+      search: 'Buscar:',
+      lengthMenu: 'Mostrar _MENU_ registros',
+      info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
+      infoEmpty: 'Sin registros',
+      infoFiltered: '(filtrado de _MAX_ registros)',
+      zeroRecords: 'No se encontraron coincidencias',
+      paginate: { first:'Primero', last:'Último', next:'›', previous:'‹' }
+    },
+    drawCallback: () => actualizarContador()
+  });
+
+  tbody.addEventListener('click', onTableClick);
+  actualizarContador();
+}
+
+function onTableClick(e) {
+  const btnV = e.target.closest('.btn-ver');
+  const btnE = e.target.closest('.btn-editar');
+  const btnD = e.target.closest('.btn-eliminar');
+  if (btnV) verDetalle(Number(btnV.dataset.row));
+  if (btnE) editarRegistro(Number(btnE.dataset.row));
+  if (btnD) confirmarEliminar(Number(btnD.dataset.row), btnD.dataset.nombre);
+}
+
+/**
+ * Actualiza el DataTable SIN destruirlo ni perder filtros/paginación
+ * (usa rows().remove() y rows.add() de la API).
+ */
+function actualizarDataTableSinPerderEstado() {
+  if (!dt) {
+    construirDataTable();
+    return;
+  }
+
+  // Guardar estado actual (filtro de búsqueda, página)
+  const estado = dt.page.info();
+  const paginaActual = estado.page;
+  const busquedaActual = dt.search();
+
+  // Limpiar y recargar filas
+  dt.clear();
+  dt.rows.add($(todosRegistros.map(r => $(filaHTML(r))[0])));
+  dt.draw(false);
+
+  // Restaurar búsqueda
+  if (busquedaActual) dt.search(busquedaActual).draw(false);
+
+  // Restaurar página si aún existe
+  if (paginaActual < dt.page.info().pages) {
+    dt.page(paginaActual).draw(false);
+  }
+
+  actualizarContador();
+}
+
+// ==================== MODAL DETALLE + PDF ====================
+window.verDetalle = async function(rowIndex) {
+  const r = todosRegistros.find(x => Number(x.rowIndex) === Number(rowIndex));
+  if (!r) return;
+
+  const tieneBoucher = r.boucher && r.boucher !== 'SIN IMAGEN' && String(r.boucher).includes('http');
+  const imgUrl = tieneBoucher ? convertToDirectImageUrl(r.boucher) : '';
+
+  const html = `
+    <div class="text-left space-y-2">
+      ${tieneBoucher
+        ? `<img src="${imgUrl}" class="detalle-img" alt="Boucher" onerror="this.onerror=null;this.src='https://placehold.co/400x300/ecfdf5/059669?text=Imagen+no+disponible';">`
+        : `<div class="p-6 bg-emerald-50 rounded-xl text-center text-emerald-700 italic">Sin boucher adjunto</div>`}
+      <div class="mt-3">
+        <div class="detalle-item"><span class="detalle-label">CI:</span>${escapeHtml(r.ci)}</div>
+        <div class="detalle-item"><span class="detalle-label">Nro Item:</span>${escapeHtml(r.nroItem)}</div>
+        <div class="detalle-item"><span class="detalle-label">Nombre:</span>${escapeHtml(r.nombre)}</div>
+        <div class="detalle-item"><span class="detalle-label">Sindicato:</span>${escapeHtml(r.sindicato)}</div>
+        <div class="detalle-item"><span class="detalle-label">Monto:</span>${escapeHtml(r.monto || '0')} Bs.</div>
+        ${r.fecha ? `<div class="detalle-item"><span class="detalle-label">Fecha:</span>${new Date(r.fecha).toLocaleString('es-BO')}</div>` : ''}
+      </div>
+    </div>
+  `;
+
+  await Swal.fire({
+    title: '📄 Detalle del Registro',
+    html,
+    width: 500,
+    showCancelButton: true,
+    showConfirmButton: tieneBoucher,
+    confirmButtonText: '📥 Descargar PDF',
+    cancelButtonText: 'Cerrar',
+    reverseButtons: true,
+    cancelButtonColor: '#6b7280',
+    didOpen: () => {
+      if (tieneBoucher) {
+        Swal.getConfirmButton().addEventListener('click', async () => {
+          try {
+            Swal.fire({ title:'Generando PDF...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+            await generarComprobantePDF(r, imgUrl, {
+              titulo: 'Detalle del Registro',
+              nombreArchivo: `Detalle_${r.ci}_${Date.now()}.pdf`
+            });
+            Swal.fire({ icon:'success', title:'PDF generado', timer:1500, showConfirmButton:false });
+          } catch (e) {
+            Swal.fire({ icon:'error', title:'Error', text: e.message });
+          }
+        });
+      }
+    }
+  });
+};
+
+// Editar
+async function editarRegistro(rowIndex) {
+  const r = todosRegistros.find(x => Number(x.rowIndex) === Number(rowIndex));
+  if (!r) return;
+
+  const { value: fv } = await Swal.fire({
+    title: '✏️ Editar registro',
+    html: `
+      <div class="text-left space-y-2">
+        <input id="ed-ci" class="swal2-input" placeholder="CI" value="${escapeHtml(r.ci)}">
+        <input id="ed-nro" class="swal2-input" placeholder="Nro Item" value="${escapeHtml(r.nroItem)}">
+        <input id="ed-nombre" class="swal2-input uppercase" placeholder="Nombre Completo" value="${escapeHtml(r.nombre)}">
+        <input id="ed-sindicato" class="swal2-input uppercase" placeholder="Sindicato" value="${escapeHtml(r.sindicato)}">
+        <input id="ed-monto" class="swal2-input" type="number" step="0.01" placeholder="Monto" value="${escapeHtml(r.monto || '')}">
+        <div class="text-xs text-gray-500 mt-2">Reemplazar boucher (opcional):</div>
+        <input id="ed-file" type="file" accept="image/*" class="swal2-file w-full">
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: '💾 Guardar',
+    cancelButtonText: 'Cancelar',
+    preConfirm: async () => {
+      const ci = document.getElementById('ed-ci').value.trim();
+      const nroItem = document.getElementById('ed-nro').value.trim();
+      const nombre = document.getElementById('ed-nombre').value.trim().toUpperCase();
+      const sindicato = document.getElementById('ed-sindicato').value.trim().toUpperCase();
+      const monto = document.getElementById('ed-monto').value.trim();
+      const file = document.getElementById('ed-file').files[0];
+
+      if (!ci || !nroItem || !nombre || !sindicato || !monto) {
+        Swal.showValidationMessage('Todos los campos son obligatorios');
+        return false;
+      }
+
+      const payload = { action:'actualizar', sessionToken, rowIndex, ci, nroItem, nombre, sindicato, monto };
+      if (file) {
+        if (file.size > 5*1024*1024) { Swal.showValidationMessage('La imagen supera 5 MB'); return false; }
+        const b64 = await fileToDataURL(file);
+        payload.fileBase64 = b64.split(',')[1];
+        payload.fileType = file.type;
+      }
+      return payload;
+    }
+  });
+  if (!fv) return;
+
+  Swal.fire({ title:'Guardando cambios...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+  try {
+    const res = await apiCall(fv);
+    if (!res.success) throw new Error(res.message);
+    Swal.fire({ icon:'success', title:'Actualizado', timer:1500, showConfirmButton:false });
+    await recargarRegistrosSinSalir();
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error', text: err.message });
+  }
+}
+
+async function confirmarEliminar(rowIndex, nombre) {
+  const confirm = await Swal.fire({
+    icon:'warning', title:'¿Eliminar registro?',
+    html:`Se eliminará el registro de <strong>${escapeHtml(nombre)}</strong> y su imagen.<br>No se puede deshacer.`,
+    showCancelButton:true, confirmButtonText:'Sí, eliminar', cancelButtonText:'Cancelar',
+    confirmButtonColor:'#dc2626'
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title:'Eliminando...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+  try {
+    const res = await apiCall({ action:'eliminar', sessionToken, rowIndex });
+    if (!res.success) throw new Error(res.message);
+    Swal.fire({ icon:'success', title:'Eliminado', timer:1500, showConfirmButton:false });
+    await recargarRegistrosSinSalir();
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error', text: err.message });
+  }
+}
+
+/**
+ * Recarga los registros del servidor y actualiza la tabla sin salir del admin
+ * y sin perder filtros/página.
+ */
+async function recargarRegistrosSinSalir() {
+  try {
+    const res = await apiCall({ action:'listar', sessionToken, forceRefresh: true });
+    if (!res.success) throw new Error(res.message);
+    todosRegistros = res.registros || [];
+    actualizarDataTableSinPerderEstado();
+  } catch (err) {
+    console.error('Error recargando:', err);
+  }
+}
+
+// ==================== EXPORTAR EXCEL CON IMÁGENES ====================
+btnExportar.addEventListener('click', async () => {
+  if (!todosRegistros.length) {
+    Swal.fire({ icon:'info', title:'Sin datos', text:'No hay registros para exportar.' });
+    return;
+  }
+
+  Swal.fire({
+    title:'Generando Excel...',
+    html:'Descargando imágenes y preparando archivo, espera un momento...',
+    allowOutsideClick:false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const data = [['CI','NRO ITEM','NOMBRE COMPLETO','SINDICATO','MONTO (Bs.)','URL BOUCHER','IMAGEN']];
+
+    const imagenes = await Promise.all(
+      todosRegistros.map(async (r) => {
+        if (!r.boucher || r.boucher === 'SIN IMAGEN') return null;
+        try {
+          const directUrl = convertToDirectImageUrl(r.boucher);
+          const resp = await fetch(directUrl, { mode:'cors' });
+          if (!resp.ok) return null;
+          const blob = await resp.blob();
+          return await blobToBase64(blob);
+        } catch (e) { return null; }
+      })
+    );
+
+    todosRegistros.forEach(r => {
+      data.push([ r.ci, r.nroItem, r.nombre, r.sindicato, r.monto || '', r.boucher || 'SIN IMAGEN', '' ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    ws['!cols'] = [
+      { wch: 14 },{ wch: 10 },{ wch: 30 },{ wch: 22 },{ wch: 14 },{ wch: 40 },{ wch: 20 }
+    ];
+
+    ws['!rows'] = [{ hpt: 22 }];
+    for (let i = 1; i < data.length; i++) ws['!rows'].push({ hpt: 72 });
+
+    if (!ws['!images']) ws['!images'] = [];
+    imagenes.forEach((b64, idx) => {
+      if (!b64) return;
+      ws['!images'].push({
+        name: `Boucher_${idx}.png`,
+        data: b64,
+        opts: {
+          tl: { col: 6, row: idx + 1 },
+          ext: { width: 72, height: 60 }
+        }
+      });
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Aportes Septiembre');
+
+    const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array', cellStyles:true });
+    const blob = new Blob([wbout], { type:'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Aportes_Septiembre_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    Swal.fire({ icon:'success', title:'Exportado', text:'Excel generado correctamente.', timer:2000, showConfirmButton:false });
+  } catch (err) {
+    Swal.fire({ icon:'error', title:'Error al exportar', text: err.message });
+  }
+});
+</script>
+
+</body>
+</html>
